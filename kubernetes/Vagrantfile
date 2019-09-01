@@ -1,0 +1,33 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Every Vagrant development environment requires a box. You can search for
+# boxes at https://atlas.hashicorp.com/search.
+BOX_IMAGE = "centos/7"
+NODE_COUNT = 4
+#ssh_pub_key = File.readlines("/Users/sudharsanpunniyakotti/Desktop/keys/rootpublic").first.strip
+
+Vagrant.configure("2") do |config|
+  config.vm.define "master" do |subconfig|
+    subconfig.vm.box = BOX_IMAGE
+    subconfig.vm.hostname = "master"
+    subconfig.vm.network :private_network, ip: "10.0.0.10"
+  end
+  
+  (1..NODE_COUNT).each do |i|
+    config.vm.define "node#{i}" do |subconfig|
+      subconfig.vm.box = BOX_IMAGE
+      subconfig.vm.hostname = "node#{i}"
+      subconfig.vm.network :private_network, ip: "10.0.0.#{i + 10}"
+    end
+  end
+
+  # Echo Hostname  on all machines  
+  config.vm.provision "shell", inline: <<-SHELL
+  sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+  systemctl restart sshd
+  #echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
+  sed -i 's/sudharsanpunniyakotti/root/g' /home/vagrant/.ssh/authorized_keys
+  yum install -y net-tools
+SHELL
+end
